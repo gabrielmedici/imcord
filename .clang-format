@@ -1,0 +1,7 @@
+﻿---
+CompactNamespaces: 'false'
+IndentWidth: '4'
+Language: Cpp
+SpaceBeforeParens: ControlStatements
+
+...
