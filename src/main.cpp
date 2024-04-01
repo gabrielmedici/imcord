@@ -1,8 +1,4 @@
-#include "imgui.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_impl_sdl3.h"
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_opengl.h>
+#include "application.h"
 #include <stdio.h>
 
 // Credits:
@@ -37,55 +33,17 @@ SDL_HitTestResult HitTestCallback(SDL_Window *Window, const SDL_Point *Area,
         return SDL_HITTEST_RESIZE_LEFT;
     } else if (Area->x > Width - MOUSE_GRAB_PADDING) {
         return SDL_HITTEST_RESIZE_RIGHT;
-    } else if (Area->y < 18) {
+    } else if (Area->y < 22) {
         return SDL_HITTEST_DRAGGABLE;
     }
 
     return SDL_HITTEST_NORMAL; // SDL_HITTEST_NORMAL <- Windows behaviour
 }
 
-static SDL_Window *window;
-
-void draw() {
-    ImGuiIO &io = ImGui::GetIO();
-    (void)io;
-
-    // Start the Dear ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL3_NewFrame();
-    ImGui::NewFrame();
-
-    static bool show_demo_window = true;
-
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-    ImGui::ShowDemoWindow(&show_demo_window);
-
-    ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and
-                                   // append into it.
-
-    ImGui::ColorEdit3(
-        "clear color",
-        (float *)&clear_color); // Edit 3 floats representing a color
-
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                1000.0f / io.Framerate, io.Framerate);
-    ImGui::End();
-
-    // Rendering
-    ImGui::Render();
-    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w,
-                 clear_color.z * clear_color.w, clear_color.w);
-    glClear(GL_COLOR_BUFFER_BIT);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    SDL_GL_SwapWindow(window);
-}
-
-static int SDLCALL ExposeEventWatcher(void *userdata, SDL_Event *event) {
-    if (event->type == SDL_EVENT_WINDOW_EXPOSED) {
-        draw();
-    }
+static int SDLCALL ExposeEventWatcher(void*, SDL_Event *event) {
+    if (event->type == SDL_EVENT_WINDOW_EXPOSED)
+        // Do app updates even when resizing
+        Tick();
     return 0;
 }
 
@@ -110,29 +68,29 @@ int main(int, char **) {
 
     // Needed for borderless resizing to work
     // https://github.com/libsdl-org/SDL/issues/8586
-    SDL_SetHint("SDL_BORDERLESS_WINDOWED_STYLE", "0");
+    SDL_SetHint("SDL_BORDERLESS_RESIZABLE_STYLE", "1");
 
     // Create window with graphics context
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    window = SDL_CreateWindow("Dear ImGui SDL3+OpenGL3 example", 1280, 720,
-                              SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+    g_State.window = SDL_CreateWindow("Dear ImGui SDL3+OpenGL3 example", 1280, 720,
+                              SDL_WINDOW_OPENGL | /*SDL_WINDOW_RESIZABLE |*/
                                   SDL_WINDOW_HIDDEN | SDL_WINDOW_BORDERLESS);
-    if (window == nullptr) {
+    if (g_State.window == nullptr) {
         printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
         return -1;
     }
 
-    SDL_SetWindowResizable(window, SDL_TRUE);
-    SDL_SetWindowHitTest(window, HitTestCallback, 0);
+    SDL_SetWindowResizable(g_State.window, SDL_TRUE);
+    SDL_SetWindowHitTest(g_State.window, HitTestCallback, 0);
 
-    SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED,
+    SDL_SetWindowPosition(g_State.window, SDL_WINDOWPOS_CENTERED,
                           SDL_WINDOWPOS_CENTERED);
-    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
-    SDL_GL_MakeCurrent(window, gl_context);
+    SDL_GLContext gl_context = SDL_GL_CreateContext(g_State.window);
+    SDL_GL_MakeCurrent(g_State.window, gl_context);
     SDL_GL_SetSwapInterval(1); // Enable vsync
-    SDL_ShowWindow(window);
+    SDL_ShowWindow(g_State.window);
     SDL_AddEventWatch(ExposeEventWatcher, NULL);
 
     // Setup Dear ImGui context
@@ -149,7 +107,7 @@ int main(int, char **) {
     ImGui::StyleColorsDark();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
+    ImGui_ImplSDL3_InitForOpenGL(g_State.window, gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Main loop
@@ -163,11 +121,11 @@ int main(int, char **) {
             if (event.type == SDL_EVENT_QUIT)
                 done = true;
             if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
-                event.window.windowID == SDL_GetWindowID(window))
+                event.window.windowID == SDL_GetWindowID(g_State.window))
                 done = true;
         }
 
-        draw();
+        Tick();
     }
 
     // Cleanup
@@ -176,7 +134,7 @@ int main(int, char **) {
     ImGui::DestroyContext();
 
     SDL_GL_DeleteContext(gl_context);
-    SDL_DestroyWindow(window);
+    SDL_DestroyWindow(g_State.window);
     SDL_Quit();
 
     return 0;

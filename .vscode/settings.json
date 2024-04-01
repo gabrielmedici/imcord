@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "*.rh": "c",
+        "chrono": "c",
+        "filesystem": "c",
+        "iomanip": "c",
+        "istream": "c",
+        "ostream": "c",
+        "regex": "c",
+        "xiosbase": "c",
+        "xlocmon": "c",
+        "xlocnum": "c",
+        "xstring": "c"
+    }
+}
