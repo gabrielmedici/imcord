@@ -113,6 +113,10 @@ int main(int, char **) {
     // Main loop
     bool done = false;
 
+    // SDL_EVENT_TEXT_INPUT isn't fired without this.
+    // imgui uses SDL_EVENT_TEXT_INPUT for text input
+    SDL_StartTextInput();
+
     while (!done)
     {
         SDL_Event event;
