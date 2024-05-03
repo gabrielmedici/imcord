@@ -1,4 +1,7 @@
-add_subdirectory( thirdparty/sdl )
+set(SDL_SHARED OFF)
+set(SDL_STATIC ON)
+
+add_subdirectory( thirdparty/sdl EXCLUDE_FROM_ALL )
 
 set( IMGUI_DIR ${CMAKE_SOURCE_DIR}/thirdparty/imgui )
 
@@ -17,9 +20,8 @@ add_library( imgui STATIC ${IMGUI_SOURCES} )
 include_directories(
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
-    ${SDL3_INCLUDE_FILES}
 )
 
 target_link_libraries( imgui PUBLIC
-    SDL3-static
+    SDL3::SDL3
 )
